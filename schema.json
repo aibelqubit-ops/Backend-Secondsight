@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Breadboard": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "example": "bb-001" },
+        "name": { "type": "string", "example": "Full-size breadboard #1" },
+        "size": { "type": "string", "enum": ["mini", "half", "full", "full+", "custom"] },
+        "columns": { "type": "integer", "example": 63, "description": "Number of terminal-strip columns (typical full-size = 63)" },
+        "rowGroups": {
+          "type": "array",
+          "description": "Terminal strip row groups on each side of the center gap. Each group's 5 holes in a column are electrically bonded.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "example": "top-abcde" },
+              "rows": { "type": "array", "items": { "type": "string" }, "example": ["a","b","c","d","e"] },
+              "side": { "type": "string", "enum": ["top", "bottom"] }
+            }
+          }
+        },
+        "powerRails": {
+          "type": "array",
+          "description": "Long horizontal rails, each column-run electrically bonded (breaks may exist on full+ boards).",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "example": "rail-top-pos" },
+              "polarity": { "type": "string", "enum": ["positive", "negative"] },
+              "position": { "type": "string", "enum": ["top", "bottom"] },
+              "columnRange": { "type": "array", "items": { "type": "integer" }, "example": [1, 63] }
+            }
+          }
+        },
+        "centerGap": {
+          "type": "boolean",
+          "description": "True for standard breadboards; DIP ICs straddle this gap so each side's pins are on separate nets."
+        }
+      }
+    },
+
+    "Hole": {
+      "type": "object",
+      "description": "A single insertion point on a breadboard, uniquely addressable.",
+      "properties": {
+        "id": { "type": "string", "example": "bb-001:top-abcde:col12:row-c" },
+        "breadboardId": { "type": "string" },
+        "column": { "type": "integer" },
+        "row": { "type": "string", "example": "c" },
+        "stripId": { "type": "string", "description": "Which row-group or power rail this hole belongs to (used to derive nets)" },
+        "occupiedBy": {
+          "type": "object",
+          "description": "What is currently plugged into this hole",
+          "properties": {
+            "kind": { "type": "string", "enum": ["wire", "componentPin", "empty"] },
+            "refId": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "Component": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "example": "comp-r1" },
+        "type": { "type": "string", "enum": ["resistor","capacitor","led","diode","transistor","ic","switch","potentiometer","pushbutton","microcontroller","sensor","relay","motor","battery","other"] },
+        "label": { "type": "string", "example": "R1" },
+        "value": { "type": "string", "example": "220ohm", "description": "e.g. resistance, capacitance, part number" },
+        "packageType": { "type": "string", "example": "DIP-8", "description": "Relevant for ICs spanning the center gap" },
+        "manufacturer": { "type": "string" },
+        "datasheetUrl": { "type": "string" },
+        "pins": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "pinId": { "type": "string", "example": "comp-r1:pin1" },
+              "pinName": { "type": "string", "example": "anode" },
+              "pinFunction": { "type": "string", "enum": ["power","ground","signal","io","nc"] },
+              "insertedAtHoleId": { "type": ["string","null"] }
+            }
+          }
+        }
+      }
+    },
+
+    "Wire": {
+      "type": "object",
+      "description": "A jumper wire connecting any two holes (breadboard-to-breadboard, breadboard-to-power-supply, breadboard-to-component-lead, etc).",
+      "properties": {
+        "id": { "type": "string", "example": "wire-014" },
+        "color": { "type": "string", "example": "red" },
+        "gauge": { "type": "string", "example": "22AWG" },
+        "endA": {
+          "type": "object",
+          "properties": {
+            "holeId": { "type": ["string","null"] },
+            "externalRef": { "type": ["string","null"], "description": "e.g. power supply terminal ID, if not a breadboard hole" }
+          }
+        },
+        "endB": {
+          "type": "object",
+          "properties": {
+            "holeId": { "type": ["string","null"] },
+            "externalRef": { "type": ["string","null"] }
+          }
+        },
+        "status": { "type": "string", "enum": ["connected","disconnected","damaged"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" }
+      }
+    },
+
+    "Net": {
+      "type": "object",
+      "description": "A computed (derived, not manually entered) electrical node: the set of all holes/pins/external refs that are physically bonded together via breadboard strips and/or wires.",
+      "properties": {
+        "id": { "type": "string", "example": "net-003" },
+        "label": { "type": "string", "example": "VCC", "description": "Optional human-assigned name, e.g. GND, VCC, SIG_A" },
+        "memberHoleIds": { "type": "array", "items": { "type": "string" } },
+        "memberPinIds": { "type": "array", "items": { "type": "string" } },
+        "externalRefs": { "type": "array", "items": { "type": "string" } },
+        "netType": { "type": "string", "enum": ["power","ground","signal","unknown"] },
+        "measuredVoltage": { "type": ["number","null"], "description": "Optional, if multimeter reading logged" }
+      }
+    },
+
+    "Circuit": {
+      "type": "object",
+      "description": "Top-level container: one experiment/project's full physical setup.",
+      "properties": {
+        "id": { "type": "string", "example": "circuit-blink-led" },
+        "name": { "type": "string", "example": "Arduino LED Blink Test" },
+        "breadboards": { "type": "array", "items": { "$ref": "#/definitions/Breadboard" } },
+        "components": { "type": "array", "items": { "$ref": "#/definitions/Component" } },
+        "wires": { "type": "array", "items": { "$ref": "#/definitions/Wire" } },
+        "nets": { "type": "array", "items": { "$ref": "#/definitions/Net" }, "description": "Auto-recomputed whenever wires/components change" },
+        "powerSupplies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "terminals": { "type": "array", "items": { "type": "string" } },
+              "voltageSetting": { "type": "number" }
+            }
+          }
+        },
+        "status": { "type": "string", "enum": ["design","wired","tested","faulty","archived"] },
+        "notes": { "type": "string" },
+        "photos": { "type": "array", "items": { "type": "string" } },
+        "snapshotHistory": {
+          "type": "array",
+          "description": "Saved versions of the full wiring state for restore/rollback",
+          "items": {
+            "type": "object",
+            "properties": {
+              "versionId": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" },
+              "wiresSnapshot": { "type": "array", "items": { "$ref": "#/definitions/Wire" } },
+              "componentsSnapshot": { "type": "array", "items": { "$ref": "#/definitions/Component" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}
