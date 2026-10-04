@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "npx serve -p 3000 .",
     "test": "jest"
   },
   "repository": {

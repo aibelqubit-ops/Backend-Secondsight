@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeStride AI Emergency UI System</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: #0a0a0c;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+    }
+
+    header.app-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    header.app-header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header.app-header p {
+      color: #a1a1aa;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .simulation-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+      background: #18181b;
+      padding: 10px 16px;
+      border-radius: 9999px;
+      border: 1px solid #27272a;
+    }
+
+    .sim-btn {
+      background: #27272a;
+      color: #f4f4f5;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sim-btn:hover {
+      background: #3f3f46;
+      color: #ffffff;
+    }
+
+    .sim-btn.danger {
+      background: rgba(255, 59, 48, 0.2);
+      color: #ff3b30;
+      border: 1px solid rgba(255, 59, 48, 0.4);
+    }
+
+    .sim-btn.danger:hover {
+      background: #ff3b30;
+      color: #ffffff;
+    }
+
+    .screens-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 40px;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .screen-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .screen-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #a1a1aa;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* Screen 1: Smartwatch Fall Alert (Wearable UI) */
+    /* Resolution: 410 x 502, rounded square 1.96-inch AMOLED */
+    .watch-frame {
+      width: 410px;
+      height: 502px;
+      background-color: #000000;
+      border-radius: 40px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 0 10px #1c1c1e, 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 59, 48, 0.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      user-select: none;
+    }
+
+    /* Top pulsating neon red banner */
+    .watch-banner {
+      width: 100%;
+      height: 48px;
+      background-color: #FF3B30;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse-red 1.2s infinite ease-in-out;
+      box-shadow: 0 0 16px rgba(255, 59, 48, 0.6);
+      z-index: 2;
+    }
+
+    .watch-banner-text {
+      font-size: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #FFFFFF;
+      letter-spacing: 1.2px;
+    }
+
+    @keyframes pulse-red {
+      0% { opacity: 1; transform: scale(1); box-shadow: 0 0 16px rgba(255, 59, 48, 0.6); }
+      50% { opacity: 0.85; transform: scale(0.98); box-shadow: 0 0 24px rgba(255, 59, 48, 0.9); }
+      100% { opacity: 1; transform: scale(1); box-shadow: 0 0 16px rgba(255, 59, 48, 0.6); }
+    }
+
+    /* Center Timer with Circular Ring */
+    .watch-timer-container {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timer-ring-svg {
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      transform: rotate(-90deg);
+    }
+
+    .timer-ring-bg {
+      fill: none;
+      stroke: rgba(255, 59, 48, 0.15);
+      stroke-width: 4px;
+    }
+
+    .timer-ring-progress {
+      fill: none;
+      stroke: #FF3B30;
+      stroke-width: 4px;
+      stroke-linecap: round;
+      /* Arc spanning 320 degrees out of 360: circumference = 2 * PI * r = 2 * PI * 120 = 753.98 */
+      stroke-dasharray: 670 754;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear;
+      filter: drop-shadow(0px 0px 6px #FF3B30);
+    }
+
+    .watch-timer-text {
+      font-size: 64px;
+      font-weight: 900;
+      color: #FFFFFF;
+      text-align: center;
+      text-shadow: 0px 4px 10px rgba(255, 59, 48, 0.4);
+      z-index: 2;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Bottom Pill Button "I AM OKAY" */
+    .watch-button {
+      width: 100%;
+      height: 60px;
+      background-color: #34C759;
+      border-radius: 40px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(52, 199, 89, 0.4);
+      transition: transform 0.1s ease, filter 0.2s ease;
+      z-index: 2;
+    }
+
+    .watch-button:active {
+      transform: scale(0.97);
+    }
+
+    .watch-button-text {
+      font-size: 22px;
+      font-weight: 700;
+      color: #000000;
+      letter-spacing: 0.5px;
+    }
+
+    /* Cancelled / Safe watch state view */
+    .watch-safe-state {
+      position: absolute;
+      inset: 0;
+      background-color: #000000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 10;
+    }
+
+    .watch-safe-state.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .watch-safe-icon {
+      width: 72px;
+      height: 72px;
+      background-color: rgba(52, 199, 89, 0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      color: #34C759;
+    }
+
+    /* Screen 2: Caregiver Dashboard (Mobile App) */
+    /* Resolution: 390 x 844, background #121212 */
+    .mobile-frame {
+      width: 390px;
+      height: 844px;
+      background-color: #121212;
+      border-radius: 44px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 0 10px #1c1c1e, 0 20px 40px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      padding: 56px 24px 40px 24px;
+      gap: 20px;
+      user-select: none;
+    }
+
+    /* Header Profile */
+    .mobile-header {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .greeting {
+      font-size: 16px;
+      font-weight: 400;
+      color: #A1A1AA;
+    }
+
+    .monitoring-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .monitoring-text {
+      font-size: 22px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #34C759;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(52, 199, 89, 0.8);
+      animation: pulse-dot 2s infinite ease-in-out;
+    }
+
+    .status-dot.danger {
+      background-color: #FF3B30;
+      box-shadow: 0 0 10px rgba(255, 59, 48, 0.9);
+    }
+
+    @keyframes pulse-dot {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Map Card */
+    .map-card {
+      width: 100%;
+      height: 220px;
+      border-radius: 24px;
+      background-color: #1E1E1E;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #2A2A2D;
+    }
+
+    /* Stylized Dark Mode Map Background */
+    .map-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, #252528 0%, #171718 100%);
+      opacity: 0.9;
+    }
+
+    .map-grid-lines {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .map-road {
+      position: absolute;
+      width: 140%;
+      height: 18px;
+      background: #333338;
+      top: 50%;
+      left: -20%;
+      transform: rotate(-12deg);
+      border-top: 2px dashed rgba(255,255,255,0.15);
+      border-bottom: 2px dashed rgba(255,255,255,0.15);
+    }
+
+    .map-road-label {
+      position: absolute;
+      top: 28px;
+      left: 16px;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #A1A1AA;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* Custom UI Map Pin */
+    .map-pin-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .map-pin {
+      width: 24px;
+      height: 24px;
+      background-color: #FFFFFF;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(255, 59, 48, 0.8), 0 0 0 6px rgba(255, 59, 48, 0.25);
+      animation: pulse-pin 1.8s infinite;
+    }
+
+    @keyframes pulse-pin {
+      0% { box-shadow: 0 0 15px rgba(255, 59, 48, 0.8), 0 0 0 4px rgba(255, 59, 48, 0.3); }
+      50% { box-shadow: 0 0 25px rgba(255, 59, 48, 1), 0 0 0 12px rgba(255, 59, 48, 0.1); }
+      100% { box-shadow: 0 0 15px rgba(255, 59, 48, 0.8), 0 0 0 4px rgba(255, 59, 48, 0.3); }
+    }
+
+    .map-pin-center {
+      width: 10px;
+      height: 10px;
+      background-color: #FF3B30;
+      border-radius: 50%;
+    }
+
+    .map-pin-badge {
+      background: #000000;
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      white-space: nowrap;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    /* Vitals Grid (2x2 Auto-Layout) */
+    .vitals-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .vital-card {
+      background-color: #1E1E1E;
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .vital-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vital-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .vital-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #A1A1AA;
+    }
+
+    .vital-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-top: 2px;
+    }
+
+    .vital-subtext {
+      font-size: 18px;
+      font-weight: 500;
+      color: #FFFFFF;
+    }
+
+    .vital-status-green {
+      color: #34C759;
+    }
+
+    .vital-status-red {
+      color: #FF3B30;
+    }
+
+    /* Sparkline Vector */
+    .sparkline-svg {
+      width: 100%;
+      height: 28px;
+      margin-top: 4px;
+    }
+
+    /* Primary Emergency Dispatch Button */
+    .mobile-action-container {
+      margin-top: auto;
+      width: 100%;
+    }
+
+    .emergency-dispatch-btn {
+      width: 100%;
+      height: 56px;
+      background-color: #FF3B30;
+      border-radius: 16px;
+      border: none;
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(255, 59, 48, 0.4);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .emergency-dispatch-btn:active {
+      transform: scale(0.98);
+      background-color: #e03126;
+    }
+
+    /* Notification / Toast overlay */
+    .toast-overlay {
+      position: fixed;
+      bottom: 24px;
+      background: #18181b;
+      color: #ffffff;
+      padding: 14px 24px;
+      border-radius: 16px;
+      border: 1px solid #3f3f46;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast-overlay.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #34C759;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .toast-icon.alert {
+      background: #FF3B30;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <h1>SafeStride AI Emergency UI System</h1>
+    <p>Dark Mode • High-Contrast Medical Alert • NoiseFit / Nebula Aesthetic</p>
+  </header>
+
+  <div class="simulation-bar">
+    <button class="sim-btn danger" onclick="triggerFallAlert()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Simulate Fall Alert
+    </button>
+    <button class="sim-btn" onclick="resetSystem()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      Reset System
+    </button>
+  </div>
+
+  <div class="screens-container">
+
+    <!-- SCREEN 1: SMARTWATCH FALL ALERT (WEARABLE UI) -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Screen 1: Smartwatch Fall Alert (1.96" AMOLED)</div>
+      <div class="watch-frame" id="watchFrame">
+
+        <!-- Top Pulsating Neon Red Banner -->
+        <div class="watch-banner">
+          <span class="watch-banner-text">FALL DETECTED</span>
+        </div>
+
+        <!-- Center 64px Countdown Timer with 320-degree circular ring -->
+        <div class="watch-timer-container">
+          <svg class="timer-ring-svg" viewBox="0 0 260 260">
+            <circle class="timer-ring-bg" cx="130" cy="130" r="120" />
+            <circle class="timer-ring-progress" id="timerRing" cx="130" cy="130" r="120" />
+          </svg>
+          <div class="watch-timer-text" id="countdownDisplay">00:15</div>
+        </div>
+
+        <!-- Bottom Pill-Shaped "I AM OKAY" Button -->
+        <button class="watch-button" id="okayBtn" onclick="userIsOkay()">
+          <span class="watch-button-text">I AM OKAY</span>
+        </button>
+
+        <!-- Safe overlay view when cancelled -->
+        <div class="watch-safe-state" id="watchSafeState">
+          <div class="watch-safe-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h2 style="font-size: 20px; font-weight: 700; color: #FFFFFF; margin-bottom: 6px;">ALERT CANCELLED</h2>
+          <p style="font-size: 14px; color: #A1A1AA;">User indicated safe state. Monitoring active.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SCREEN 2: CAREGIVER DASHBOARD (MOBILE APP) -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Screen 2: Caregiver Dashboard (Mobile App)</div>
+      <div class="mobile-frame">
+
+        <!-- Header Profile -->
+        <div class="mobile-header">
+          <div class="greeting">Hello, Aibel</div>
+          <div class="monitoring-row">
+            <span class="monitoring-text">Monitoring: Ancy Boby</span>
+            <div class="status-dot" id="statusDot"></div>
+          </div>
+        </div>
+
+        <!-- Map Card -->
+        <div class="map-card">
+          <div class="map-bg"></div>
+          <div class="map-grid-lines"></div>
+          <div class="map-road"></div>
+          <div class="map-road-label">NH744, Punalur</div>
+
+          <div class="map-pin-container">
+            <div class="map-pin">
+              <div class="map-pin-center"></div>
+            </div>
+            <div class="map-pin-badge">Last Known Location</div>
+          </div>
+        </div>
+
+        <!-- Vitals Grid (2x2) -->
+        <div class="vitals-grid">
+
+          <!-- Card 1: Heart Rate -->
+          <div class="vital-card">
+            <div class="vital-card-header">
+              <div class="vital-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF3B30" stroke="none"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </div>
+              <span class="vital-title">Heart Rate</span>
+            </div>
+            <div class="vital-value" id="heartRateVal">68 BPM</div>
+            <svg class="sparkline-svg" viewBox="0 0 100 28" fill="none">
+              <path d="M0 20 L20 20 L28 10 L36 25 L44 5 L52 22 L60 18 L100 18" stroke="#FF3B30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- Card 2: Oxygen -->
+          <div class="vital-card">
+            <div class="vital-card-header">
+              <div class="vital-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#007AFF" stroke="none"><circle cx="12" cy="12" r="9" opacity="0.2"/><path d="M12 4C8 4 6 8 6 12s3 8 6 8 6-4 6-8-2-8-6-8z" fill="#007AFF"/></svg>
+              </div>
+              <span class="vital-title">Oxygen (SpO2)</span>
+            </div>
+            <div class="vital-value">97%</div>
+          </div>
+
+          <!-- Card 3: Battery -->
+          <div class="vital-card">
+            <div class="vital-card-header">
+              <div class="vital-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#34C759" stroke="none"><rect x="2" y="7" width="16" height="10" rx="2" fill="#34C759"/><path d="M20 10v4" stroke="#34C759" stroke-width="2" stroke-linecap="round"/></svg>
+              </div>
+              <span class="vital-title">Battery</span>
+            </div>
+            <div class="vital-subtext">84% - Charging</div>
+          </div>
+
+          <!-- Card 4: Status -->
+          <div class="vital-card">
+            <div class="vital-card-header">
+              <div class="vital-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF9500" stroke="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-5.45 9-12V5l-9-4z"/></svg>
+              </div>
+              <span class="vital-title">Status</span>
+            </div>
+            <div class="vital-subtext vital-status-green" id="fallStatusVal">Stable</div>
+          </div>
+
+        </div>
+
+        <!-- Action Button -->
+        <div class="mobile-action-container">
+          <button class="emergency-dispatch-btn" onclick="dispatchEmergency()">
+            DISPATCH EMERGENCY SERVICES
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast-overlay" id="toast">
+    <div class="toast-icon" id="toastIcon">✓</div>
+    <span id="toastMsg">Emergency services notified.</span>
+  </div>
+
+  <script>
+    let timerVal = 15;
+    let timerInterval = null;
+    const maxDashOffset = 670; // stroke-dasharray max
+    const totalTime = 15;
+
+    const countdownDisplay = document.getElementById('countdownDisplay');
+    const timerRing = document.getElementById('timerRing');
+    const watchSafeState = document.getElementById('watchSafeState');
+    const statusDot = document.getElementById('statusDot');
+    const fallStatusVal = document.getElementById('fallStatusVal');
+    const heartRateVal = document.getElementById('heartRateVal');
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    const toastIcon = document.getElementById('toastIcon');
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timerVal = 15;
+      updateDisplay();
+      watchSafeState.classList.remove('active');
+
+      timerInterval = setInterval(() => {
+        timerVal--;
+        updateDisplay();
+
+        if (timerVal <= 0) {
+          clearInterval(timerInterval);
+          onTimerExpired();
+        }
+      }, 1000);
+    }
+
+    function updateDisplay() {
+      const formatted = '00:' + (timerVal < 10 ? '0' + timerVal : timerVal);
+      countdownDisplay.textContent = formatted;
+
+      // Update ring offset
+      // 320 degrees ring length = 670
+      const fraction = (totalTime - timerVal) / totalTime;
+      const offset = maxDashOffset * fraction;
+      timerRing.style.strokeDashoffset = offset;
+    }
+
+    function userIsOkay() {
+      clearInterval(timerInterval);
+      watchSafeState.classList.add('active');
+      statusDot.className = 'status-dot';
+      fallStatusVal.textContent = 'Stable';
+      fallStatusVal.className = 'vital-subtext vital-status-green';
+      showToast('Alert dismissed by user (I AM OKAY)', false);
+    }
+
+    function onTimerExpired() {
+      statusDot.className = 'status-dot danger';
+      fallStatusVal.textContent = 'FALL ESCALATED';
+      fallStatusVal.className = 'vital-subtext vital-status-red';
+      heartRateVal.textContent = '104 BPM';
+      showToast('CRITICAL: No response from user! Fall escalated to Caregiver.', true);
+    }
+
+    function triggerFallAlert() {
+      statusDot.className = 'status-dot';
+      fallStatusVal.textContent = 'Monitoring...';
+      fallStatusVal.className = 'vital-subtext';
+      heartRateVal.textContent = '68 BPM';
+      startTimer();
+      showToast('Fall alert triggered on watch.', true);
+    }
+
+    function resetSystem() {
+      clearInterval(timerInterval);
+      timerVal = 15;
+      updateDisplay();
+      watchSafeState.classList.remove('active');
+      statusDot.className = 'status-dot';
+      fallStatusVal.textContent = 'Stable';
+      fallStatusVal.className = 'vital-subtext vital-status-green';
+      heartRateVal.textContent = '68 BPM';
+      showToast('System reset to normal state.', false);
+    }
+
+    function dispatchEmergency() {
+      showToast('🚨 EMERGENCY SERVICES DISPATCHED TO NH744, PUNALUR!', true);
+    }
+
+    function showToast(msg, isAlert = false) {
+      toastMsg.textContent = msg;
+      if (isAlert) {
+        toastIcon.textContent = '!';
+        toastIcon.className = 'toast-icon alert';
+      } else {
+        toastIcon.textContent = '✓';
+        toastIcon.className = 'toast-icon';
+      }
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 4000);
+    }
+
+    // Auto start on page load
+    startTimer();
+  </script>
+</body>
+</html>
